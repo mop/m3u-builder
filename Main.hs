@@ -9,6 +9,7 @@ import Control.Monad (filterM, when, foldM, mplus)
 import Data.List (isSuffixOf, (\\), nub)
 import Control.Monad.Trans
 import Control.Exception (evaluate)
+import Maybe (isNothing)
 
 import qualified Data.Map as M
 
@@ -87,11 +88,17 @@ parseId3' fp = do
  - Searches the file-system for mp3-files, parses their id3 tags and creates a
  - hash which maps their file-path to the id3 tag.
  -}
-buildMap :: FilePath -> IO Id3Map
-buildMap fp = findMp3Files fp >>= (foldM buildMap' M.empty)
+buildMap :: FilePath -> Id3Map -> IO Id3Map
+buildMap fp cache = do
+        files <- findMp3Files fp 
+        m     <- foldM buildMap' cache (filterCached files)
+        let cachedFiles = map fst (M.toList m)
+        evaluate $ foldr (\x m' -> M.delete x m') m (cachedFiles \\ files)
+        
     where   buildMap' map file = do
                 id3 <- parseId3' file
                 maybe (return map) (\x -> return $! (M.insert file x map)) id3
+            filterCached = filter (\x -> isNothing (M.lookup x cache))
 
 {-
  - Removes the trailing slash ('/') from the given string
@@ -127,10 +134,12 @@ main = do
     args <- getArgs
     case args of
         (dir:playlist:xs) -> do
-            m <- buildMap (unSlash dir)
+            cache <- loadCache
+            m <- buildMap (unSlash dir) cache
             m3uList <- (parseM3u playlist >>= (return . (flip m3uToid3List m)))
             similar <- findSimilar (take' (restrict xs) m3uList)
             let results = filterSimilar m (nub (concat similar))
+            writeCache m
             putStrLn $ toM3u results
         otherwise -> do
             putStrLn "Error, usage: recommendator <Music-Directory> <Playlist>"

@@ -42,7 +42,7 @@ data Id3Info = Id3Info {
       , id3Year :: !String
       , id3Genre :: !String
       , id3Popularity :: !Integer
-} deriving (Show, Eq)
+} deriving (Show, Eq, Read)
 
 {-
  - Constructs an empty id3-struct

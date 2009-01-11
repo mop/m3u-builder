@@ -3,6 +3,9 @@ where
 
 import Maybe
 import Data.List (find)
+import System.Directory (getHomeDirectory, doesDirectoryExist, createDirectory)
+import Control.Monad (when)
+import Control.Exception (try, evaluate)
 
 import qualified Data.Map as M
 
@@ -31,3 +34,33 @@ filterSimilar m similar = map toMapArtist $ filter inMap similar
                 | isEql x y = True
                 | otherwise = x `isIn` ys
             toMapArtist x = fromJust $ find ((isEql x) . snd) $ M.toList m
+
+{-
+ - Loads the ID3-Cache from ~/.m3u-builder/cache
+ -}
+loadCache :: IO (M.Map String Id3Info)
+loadCache = do
+    home <- getHomeDirectory
+    let dir  = home ++ "/.m3u-builder"
+    let path = dir  ++ "/cache"
+    result <- try (readFile path >>= return . read)
+    case result of
+        Left _  -> do
+            exist <- doesDirectoryExist path
+            when (not exist) (createDirectory dir)
+            return M.empty
+        Right m -> evaluate m
+
+writeCache :: M.Map String Id3Info -> IO ()
+writeCache cache = do
+    home <- getHomeDirectory
+    let dir = home ++ "/.m3u-builder"
+    let path = dir ++ "/cache"
+    result <- (try (writeFile path $ show cache))
+    case result of 
+        Left _ -> do
+            exists <- doesDirectoryExist path
+            if exists
+                then    return ()
+                else    createDirectory dir >> writeCache cache
+        Right _ -> return ()
