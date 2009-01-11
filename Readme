@@ -1,0 +1,35 @@
+= M3u-Builder
+
+M3u-Builder is a simple Haskell script which generates m3u-playlist files based
+on a playlist file which you are providing the program as input. 
+
+== How it works
+
+It queries for each element of your input-playlist the last.fm API in order to
+find similar tracks. Those tracks are collected and filtered with the music on
+your filesystem, so that only music in the playlist shows up, which is actually
+on your filesystem.
+
+== Limitations
+
+Only MP3 files and M3U-playlists are supported. The ID3(v2) parser might still
+be incomplete and might sometimes not work as expected.
+Querying a lot of music in the playlist might take a while, since HTTP-requests
+aren't done in parallel.
+
+== Usage
+
+m3u-builder <music-directory> <playlist> [number-of-tracks]
+
+The music directory is a directory on your file system in which all your music
+is stored. It will be scanned for new mp3-files each time the program is run.
+To improve performance the parsing results are cached in the
+~/.m3u-builder/cache file to improve the performance. If you modify the 
+ID3-tags of one of your mp3-files you should manually clear the cache by
+simply deleting the file.
+
+The playlist is a m3u-playlist.
+
+The number of tracks is an optional number, which indicates the top N tracks of
+the given playlist which should be used for querying last.fm. If no number is
+given all tracks are queried from last.fm.

@@ -106,12 +106,23 @@ buildMap fp cache = do
 unSlash xs | last xs == '/' = take (length xs - 1) xs
            | otherwise      = xs
 
+{-
+ - Pops the last element of a list
+ -}
+pop :: [a] -> [a]
+pop xs = fst $ splitAt (length xs - 1) xs
+
+{-
+ - Pops the trailing newline of a string.
+ -}
+popNl xs | last xs == '\n' = pop xs
+         | otherwise = xs
 
 {-
  - Converts the given id3 information to an m3u file
  -}
 toM3u :: [(String, Id3Info)] -> String
-toM3u = (header ++) . (concatMap id3ToM3u) . (addIndex [1..])
+toM3u = popNl . (header ++) . (concatMap id3ToM3u) . (addIndex [1..])
     where   header = "#EXTM3U\n"
             id3ToM3u (id, path, id3) = "#EXTINF:100," ++ 
                                        (show id) ++ 
@@ -142,5 +153,5 @@ main = do
             writeCache m
             putStrLn $ toM3u results
         otherwise -> do
-            putStrLn "Error, usage: recommendator <Music-Directory> <Playlist>"
+            putStrLn "Error, usage: m3u-builder <Music-Directory> <Playlist>"
             exitWith $ ExitFailure 1
