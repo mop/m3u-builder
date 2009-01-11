@@ -9,6 +9,7 @@ import Network.URI
 import Control.Monad
 import Control.Monad.Error
 import Maybe
+import Control.Exception (evaluate)
 
 import Text.XML.HaXml
 import Text.XML.HaXml.Parse
@@ -32,9 +33,13 @@ filterJust = (map fromJust) . (filter isJust)
 findSimilar :: [Id3Info] -> IO [[Id3Info]]
 findSimilar infos = do
             cs <- contents 
-            return $ map parseToId3 (filterJust cs)
-    where   contents :: IO [Maybe String]
-            contents = mapM (downloadURL . mkUrl) infos
+            evaluate $ filterJust cs
+    where   contents :: IO [Maybe [Id3Info]]
+            contents = mapM doDownload infos
+            doDownload :: Id3Info -> IO (Maybe [Id3Info])
+            doDownload info = do 
+                c <- downloadURL (mkUrl info)
+                maybe (evaluate Nothing) (evaluate . Just . parseToId3) c
 
 {-
  - Creates a url out of the given id3 struct which is used for lookup on
@@ -59,7 +64,7 @@ downloadURL url = maybe (return Nothing) doRequest request
                                       (return "")
             doRequest req = do 
                 result <- simpleHTTP req
-                return $ either (const Nothing) (Just . rspBody) result
+                evaluate $ either (const Nothing) (Just . rspBody) result
             uri = parseURI url
 
 {-

@@ -244,9 +244,9 @@ groupList (x:y:xs) = (x, y) : groupList xs
  - Parses an ID3v1 tag
  -}
 parseId3v1Info :: String -> Maybe Id3Info
-parseId3v1Info contents | length toParse < 128 = Nothing
+parseId3v1Info contents | length contents < 128 = Nothing
                         | otherwise = parseId3v1Info' toParse
-    where   toParse = reverse $ take 128 $ reverse contents
+    where   toParse = drop ((length contents) - 128) contents
 
 {-
  - Parses an 128 bit chunk to an Id3Info struct.

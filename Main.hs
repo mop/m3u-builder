@@ -116,15 +116,22 @@ toM3u = (header ++) . (concatMap id3ToM3u) . (addIndex [1..])
             addIndex (y:ys) ((f, id3):xs) = (y, f, id3) : (addIndex ys xs)
             addIndex _ _ = []
 
+restrict :: [String] -> Int
+restrict (x:xs) = read x    
+restrict []     = 0
+
+take' n xs | n == 0    = xs
+           | otherwise = take n xs
+
 main = do
     args <- getArgs
     case args of
         (dir:playlist:xs) -> do
             m <- buildMap (unSlash dir)
             m3uList <- (parseM3u playlist >>= (return . (flip m3uToid3List m)))
-            similar <- findSimilar m3uList
+            similar <- findSimilar (take' (restrict xs) m3uList)
             let results = filterSimilar m (nub (concat similar))
             putStrLn $ toM3u results
         otherwise -> do
-            putStrLn "Error, usage: recommendator <Music-Directory> <Playlist"
+            putStrLn "Error, usage: recommendator <Music-Directory> <Playlist>"
             exitWith $ ExitFailure 1
