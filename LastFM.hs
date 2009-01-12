@@ -19,7 +19,7 @@ import Id3Parser
 {-
  - The last.fm api key
  -}
-apiKey = "8bfc6ab7a6d8961b081d3df495f37f47"
+apiKey = "YOURAPIKEY"
 
 {-
  - Filters the Just-elements in the given list and returns the encapsulated
